@@ -1,6 +1,34 @@
+# Python
 mlops-mlflow-test
 .env
 mlops-mlflow/log
 mlops-mlflow/model
 __pycache__/
 *.pyc
+project_root/dataset
+project_root/models
+.idea
+.coverage
+coverage.xml
+.pytest_cache/
+htmlcov/
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Data
+data/dataset/*.csv
+data/models/*.pkl
+data/results/*.csv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

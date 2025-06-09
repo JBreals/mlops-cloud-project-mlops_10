@@ -2,6 +2,7 @@ import fire
 import pandas as pd
 from icecream import ic
 
+# src디렉토리에서 불러오는 모듈들
 from src.data_loader.data_loader import collect_tokyo_weather
 from src.preprocess.preprocess import load_and_split
 from src.train.train import train_prophet, train_sarimax
@@ -14,9 +15,9 @@ import os
 import mlflow
 from datetime import datetime
 from src.model_select.modelselect import get_best_model
-from serving.service import load_forecast, load_clothing
+from src.serving.service import load_forecast, load_clothing
 
-mlflow.set_tracking_uri("http://13.124.75.142:5000") # set the uri 
+mlflow.set_tracking_uri("http://localhost:5000/") # set the uri 
 
 date_str = datetime.now().strftime("%Y-%m-%d")
 experiment_name = f"weather_prediction_{date_str}"

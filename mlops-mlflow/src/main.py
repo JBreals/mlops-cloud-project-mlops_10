@@ -11,7 +11,7 @@ load_dotenv(find_dotenv())
 X, y = make_regression(n_samples=100, n_features=1, noise=10, random_state=42)
 
 # MLflow 설정
-mlflow.set_tracking_uri("http://localhost:5000")  # log (mlruns) 저장 위치
+mlflow.set_tracking_uri("http://localhost:5050")  # log (mlruns) 저장 위치
 mlflow.set_experiment("demo_experiment")  # 실험 이름
 
 # 실험 시작

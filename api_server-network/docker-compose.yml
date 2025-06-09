@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   api-server:
     build:
@@ -11,7 +9,7 @@ services:
       - ./api-server/src:/app/src  # 코드 공유
     networks:
       - serving-net
-      - mlops-net
+      - shared-monitoring
     depends_on:
       - inference-server
       - serving-db
@@ -22,6 +20,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_REGION=${AWS_DEFAULT_REGION}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload # 실험하고 삭제제
 
   inference-server:
     build:
@@ -33,14 +32,13 @@ services:
       - ./inference-server/src:/app/src  # 코드 공유
     networks:
       - serving-net
-      - mlops-net
+      - shared-monitoring
     environment:
       - MODEL_PATH=/app/model/model.pkl
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_REGION=${AWS_DEFAULT_REGION}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
-
   serving-db:
     image: postgres:13
     container_name: serving-db
@@ -72,8 +70,9 @@ networks:
   serving-net:
     name: serving-net
     driver: bridge
-  mlops-net:
-    external: true
+  shared-monitoring:
+    name: shared-monitoring
+    external: false
 
 volumes:
   serving-db-data:

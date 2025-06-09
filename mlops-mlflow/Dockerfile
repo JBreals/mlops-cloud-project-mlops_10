@@ -14,6 +14,6 @@ RUN pip install --upgrade pip && \
     pip install -r python.txt
 
 # 포트 노출 및 기본 명령어
-EXPOSE 5000
+EXPOSE 5050
 CMD ["bash"]
 

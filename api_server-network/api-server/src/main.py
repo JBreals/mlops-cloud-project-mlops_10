@@ -1,10 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import pandas as pd
 import os
 import psycopg2
 import requests
+import time
 
 # ⛅ 옷 추천 기준 함수
 def recommend(temp):
@@ -21,13 +22,12 @@ def recommend(temp):
     else:
         return '두꺼운 코트, 목도리 (매우 추움)'
 
-# 🧾 모델 요청 바디 정의
 class ModelUploadRequest(BaseModel):
     exp_name: str
     run_id: str
     pkl_file: str
 
-# 📡 환경 변수 설정
+# 환경변수
 INFERENCE_TRIGGER_URL = f"{os.getenv('INFERENCE_URL')}/run_inference"
 DB_HOST = os.getenv("DB_HOST", "serving-db")
 DB_PORT = os.getenv("DB_PORT", "5432")
@@ -35,7 +35,7 @@ DB_NAME = os.getenv("DB_NAME", "serving")
 DB_USER = os.getenv("DB_USER", "user")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "password")
 
-# 🔄 DB에서 예측 데이터 불러오기
+# 데이터 불러오기
 def get_base_df():
     try:
         conn = psycopg2.connect(
@@ -56,7 +56,6 @@ def get_base_df():
         print("DB Error:", e)
         return None
 
-# 📅 일별 평균/최소/최대 및 옷 추천 가공
 def get_daily_df(df):
     if df is None:
         return None
@@ -68,14 +67,41 @@ def get_daily_df(df):
     daily['clothing'] = daily['avg_temp'].apply(recommend)
     return daily
 
-# 🧩 FastAPI 앱 생성
+# FastAPI 앱 생성
 app = FastAPI()
 app.state.df = None
 app.state.daily = None
 
+# ✅ 수정된 Rate Limiting 미들웨어
+request_log = []
+REQUEST_LIMIT = 20
+TIME_WINDOW = 60
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    global request_log
+
+    now = time.time()
+    request_log = [t for t in request_log if now - t < TIME_WINDOW]
+
+    if len(request_log) >= REQUEST_LIMIT:
+        print("🚨 Rate limit exceeded!")
+        return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"})
+
+    request_log.append(now)
+    return await call_next(request)
+
+# 엔드포인트 정의
 @app.get("/")
 def hello():
     return {"message": "hello world 8000"}
+
+#from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+#from fastapi.responses import Response
+
+#@app.get("/metrics")
+#def metrics():
+    #return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 @app.get("/result_load")
 def result_load():
@@ -121,7 +147,6 @@ def model_upload(request: ModelUploadRequest):
             INFERENCE_TRIGGER_URL,
             json={"exp_name": exp_name, "run_id": run_id, "pkl_file": pkl_file}
         )
-        # 추론 후 바로 데이터 불러오기
         app.state.df = get_base_df()
         app.state.daily = get_daily_df(app.state.df)
         return {
@@ -131,22 +156,3 @@ def model_upload(request: ModelUploadRequest):
         }
     except requests.exceptions.RequestException as e:
         return {"status": 500, "error": str(e)}
-
-        # try:
-#     response = s3.get_object(Bucket="mlops-weather", Key="data/deploy_volume/result/prediction.csv")
-#     data = response['Body'].read().decode('utf-8')
-#     df = pd.read_csv(StringIO(data))
-
-#     df['datetime'] = pd.to_datetime(df['datetime'])
-#     df['date'] = df['datetime'].dt.date
-#     daily = df.groupby('date').agg({
-#         'pred_temp': ['min', 'max', 'mean']
-#     })
-#     daily.columns = ['min_temp', 'max_temp', 'avg_temp']
-#     daily = daily.reset_index()
-
-    
-#     daily['clothing'] = daily['avg_temp'].apply(recommend)
-
-# except s3.exceptions.NoSuchKey:
-#     df = None

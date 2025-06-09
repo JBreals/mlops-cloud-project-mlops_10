@@ -5,17 +5,17 @@ from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 
 def train_model_with_autolog(model, model_name, X_train, X_test, y_train, y_test):
 
-		mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
-		
-		experiment_name = "japan_weather_prediction"
-		try:
-		    experiment_id = mlflow.create_experiment(experiment_name)
-		    print(f"created new MLflow experiment: {experiment_name} (ID: {experiment_id})")
-		except mlflow.exceptions.MlflowException:
-		    experiment_id = mlflow.get_experiment_by_name(experiment_name).experiment_id
-		    print(f"using existing MLflow experiment: {experiment_name} (ID: {experiment_id})")
-		
-		mlflow.sklearn.autolog()
+    mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
+    
+    experiment_name = "japan_weather_prediction"
+    try:
+        experiment_id = mlflow.create_experiment(experiment_name)
+        print(f"created new MLflow experiment: {experiment_name} (ID: {experiment_id})")
+    except mlflow.exceptions.MlflowException:
+        experiment_id = mlflow.get_experiment_by_name(experiment_name).experiment_id
+        print(f"using existing MLflow experiment: {experiment_name} (ID: {experiment_id})")
+    
+    mlflow.sklearn.autolog()
 
     with mlflow.start_run(run_name=model_name, experiment_id=experiment_id) as run:
         print(f"\nStarting MLflow run for {model_name} (Run ID: {run.info.run_id})")
