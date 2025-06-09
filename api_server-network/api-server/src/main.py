@@ -45,7 +45,7 @@ def get_base_df():
             user=DB_USER,
             password=DB_PASSWORD
         )
-        query = "SELECT datetime, pred_temp FROM predictions ORDER BY datetime"
+        query = "SELECT datetime, pred_temp FROM predictions ORDER BY datetime LIMIT 168"
         df = pd.read_sql(query, conn)
         conn.close()
 

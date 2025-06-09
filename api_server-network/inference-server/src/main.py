@@ -1,22 +1,24 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
+from datetime import datetime
 import os
 import boto3
 import joblib
 import pandas as pd
-from datetime import datetime
-from pydantic import BaseModel
 import psycopg2
+
 
 class ModelUploadRequest(BaseModel):
     exp_name: str
     run_id: str
     pkl_file: str
 
+
 app = FastAPI()
 
 # 🔐 환경 변수 기반 (AWS는 모델 다운로드용)
-AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY")
-AWS_SECRET_KEY = os.getenv("AWS_SECRET_KEY")
+AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_REGION = "ap-northeast-2"
 
 # 🔐 PostgreSQL 환경 변수
@@ -35,6 +37,10 @@ s3 = boto3.client(
     region_name=AWS_REGION
 )
 
+@app.get("/")
+def root():
+    return {"status": "ok"}
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -46,7 +52,9 @@ def run_inference(request: ModelUploadRequest):
     pkl_file = request.pkl_file
 
     BUCKET_NAME = "mlops-weather"
-    MODEL_S3_KEY = f"data/deploy_volume/model/{exp_name}/{run_id}/artifacts/model/artifacts/{pkl_file}"
+    MODEL_S3_KEY = (
+        f"data/deploy_volume/model/{exp_name}/{run_id}/artifacts/model/artifacts/{pkl_file}"
+    )
     LOCAL_MODEL_PATH = os.path.join("model", pkl_file)
 
     try:
@@ -60,6 +68,8 @@ def run_inference(request: ModelUploadRequest):
         forecast = model.predict(df_future)
         result = forecast[["ds", "yhat"]].copy()
         result.columns = ["datetime", "pred_temp"]
+        result["datetime"] = pd.to_datetime(result["datetime"])
+        result["datetime"] = result["datetime"].dt.floor("H")
 
         # 3. DB 연결
         conn = psycopg2.connect(
@@ -75,7 +85,7 @@ def run_inference(request: ModelUploadRequest):
         cur.execute("""
             CREATE TABLE IF NOT EXISTS predictions (
                 id SERIAL PRIMARY KEY,
-                datetime TIMESTAMP,
+                datetime TIMESTAMP UNIQUE,
                 pred_temp FLOAT
             );
         """)
@@ -83,11 +93,14 @@ def run_inference(request: ModelUploadRequest):
 
         # 5. 결과 삽입
         for _, row in result.iterrows():
-            cur.execute(
-                "INSERT INTO predictions (datetime, pred_temp) VALUES (%s, %s)",
-                (row["datetime"], row["pred_temp"])
-            )
+            cur.execute("""
+                INSERT INTO predictions (datetime, pred_temp)
+                VALUES (%s, %s)
+                ON CONFLICT (datetime)
+                DO UPDATE SET pred_temp = EXCLUDED.pred_temp;
+            """, (row["datetime"], row["pred_temp"]))
         conn.commit()
+
         cur.close()
         conn.close()
 
