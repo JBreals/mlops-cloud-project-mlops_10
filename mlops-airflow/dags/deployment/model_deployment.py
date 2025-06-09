@@ -64,7 +64,6 @@ with DAG(
     preprocess = DockerOperator(
     task_id='preprocess_data',
     image='jbreal/mlops-deployment:latest',
-    platform='linux/amd64',  # Add this line
     api_version='auto',
     auto_remove=True,
     environment={
@@ -79,7 +78,6 @@ with DAG(
     train_prophet = DockerOperator(
     task_id='train_prophet',
     image='jbreal/mlops-deployment:latest',
-    platform='linux/amd64',  # Add this line
     api_version='auto',
     auto_remove=True,
     environment={
@@ -94,7 +92,6 @@ with DAG(
     train_sarimax = DockerOperator(
     task_id='train_sarimax',
     image='jbreal/mlops-deployment:latest',
-    platform='linux/amd64',  # Add this line
     api_version='auto',
     auto_remove=True,
     environment={
@@ -109,8 +106,7 @@ with DAG(
 
     evaluate_prophet = DockerOperator(
     task_id='evaluate_prophet',
-    image='jbreal/mlops-deployment:latest',
-    platform='linux/amd64',  # Add this line
+    image='jbreal/mlops-deployment:latest', 
     api_version='auto',
     auto_remove=True,
     environment={
@@ -125,7 +121,6 @@ with DAG(
     evaluate_sarimax = DockerOperator(
     task_id='evaluate_sarimax',
     image='jbreal/mlops-deployment:latest',
-    platform='linux/amd64',  # Add this line
     api_version='auto',
     auto_remove=True,
     environment={
@@ -140,7 +135,6 @@ with DAG(
     model_select = DockerOperator(
     task_id='model_select',
     image='jbreal/mlops-deployment:latest',
-    platform='linux/amd64',  # Add this line
     api_version='auto',
     auto_remove=True,
     environment={

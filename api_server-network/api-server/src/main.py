@@ -74,7 +74,7 @@ app.state.daily = None
 
 # ✅ 수정된 Rate Limiting 미들웨어
 request_log = []
-REQUEST_LIMIT = 20
+REQUEST_LIMIT = 200
 TIME_WINDOW = 60
 
 @app.middleware("http")

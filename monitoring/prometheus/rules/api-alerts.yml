@@ -14,8 +14,8 @@ groups:
 
       # High memory usage
       - alert: HighMemoryUsage
-        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.85
-        for: 5m
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.05
+        for: 10s
         labels:
           severity: warning
         annotations:
@@ -24,8 +24,8 @@ groups:
 
       # High CPU usage
       - alert: HighCPUUsage
-        expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
-        for: 5m
+        expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[10s])) * 100) > 5
+        for: 10s
         labels:
           severity: warning
         annotations:
